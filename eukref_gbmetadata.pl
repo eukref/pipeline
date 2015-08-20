@@ -2,7 +2,7 @@
 
 #Quick and dirty perl script to get certain metainformation from genebank accession numbers.
 
-# Mallo, D. 2012; del Campo, J. 2015
+# Mallo, D. 2012; del Campo, J. 2015; Audic, S. 2015
 
 use strict;
 use warnings;
@@ -70,9 +70,9 @@ my $url = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotid
 	$iso = "n/a" ; 
     }
     if( defined($featrefs->{"environmental_sample"})){
-	$env = "TRUE" ;
+	$env = "environmental" ;
     } else {
-	$env = "n/a" ; 
+	$env = "isolate" ; 
     }
     if( defined($featrefs->{"host"})){
 	$hst = $featrefs->{"host"} ;
