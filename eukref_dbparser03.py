@@ -44,28 +44,40 @@ for line in lines:
 	removal = line.split("\t")[1]
 	removal = removal.strip()
 	id = line.split("\t")[0]
-	if removal == ("remove" or "REMOVE" or "Remove"):
+        if removal == ("remove" or "REMOVE" or "Remove"):
 		removallist.append(id)
-
+print removallist
 for j in range(len(fastalines)):
 	line = fastalines[j]
 	if line[0] == ">":
 		
-		if line.startswith(">gi+"):
+                if line.count("noginumber") > 0:
+                        accession = line.split("|")[-1]
+                        accession = accession.strip()
+                        print accession
+                        if accession not in removallist:
+                                print 'Not_deleteing'
+                                outfile.write(line)
+                                next_l = fastalines[j+1]
+                                outfile.write(next_l)
+
+		elif line.startswith(">gi+"):
 			accession = line.split("+")[3]
 			if accession not in removallist:
 				outfile.write(line)
 				next_l = fastalines[j+1]
 				outfile.write(next_l)
 		
-		if line.startswith(">gi|"):
+		elif line.startswith(">gi|"):
 			accession = line.split("|")[3]
 			if accession not in removallist:
 				outfile.write(line)
 				next_l = fastalines[j+1]
 				outfile.write(next_l)
-				
+
+			
 		else:
+                        print 'sssssss'
 			outfile.write(line)
 			next_l = fastalines[j+1]
 			outfile.write(next_l)
