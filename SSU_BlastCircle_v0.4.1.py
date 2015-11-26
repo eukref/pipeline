@@ -38,9 +38,11 @@ print group_name
 #loads in the tax dictionary
 tax_d = pickle.load(open('tax_d.bin','rb'))
 
+Renaming_d = {}
+
 #runs blast against NT database
 def nt_blast(query_file, num_seqs, outf):
-	os.system('blastn -task %s -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt 6 -out %s' % (blast_method, query_file, path_to_nt, str(cpu), str(num_seqs), outf))
+	os.system("blastn -task %s -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore sscinames scomnames sblastnames sskingdoms' -out %s" % (blast_method, query_file, path_to_nt, str(cpu), str(num_seqs), outf))
 	infile = open(outf)
 	lines = infile.readlines()
 	infile.close()
@@ -49,6 +51,7 @@ def nt_blast(query_file, num_seqs, outf):
 		if float(line.split()[2]) >= float(percent_id_nt):
 			hit_column = line.split()[1]
 			acc.append(hit_column.split('|')[3])
+			Renaming_d[hit_column.split('|')[3]] = [line.split('\t')[-4],line.split('\t')[-2],line.split('\t')[-1]]
 	accset = set(acc)
 
 	return accset
@@ -113,11 +116,13 @@ def load_fasta_file(fname):
 def trim_short_seqs(fnamein, fnameout, length):
 	d = load_fasta_file(fnamein)
 	out = open(fnameout,'w')
+	print d
 	for i in d:
-		if len(d[i]) > int(length) and len(d[i]) < 5000:
-			out.write('>%s\n%s\n' % (i, d[i]))
-		else:
-			shortout.write('%s\n' % (i.split('|')[3]))
+		if i != '':
+			if len(d[i]) > int(length) and len(d[i]) < 5000:
+				out.write('>%s\n%s\n' % (i, d[i]))
+			else:
+				shortout.write('%s\n' % (i.split('|')[3]))
 
 #makes_empt_dict of accession numbers in fasta file
 def make_ac_dict(fname):
@@ -155,8 +160,12 @@ def run_uchime(fnamein, fnameout):
 	infile.close()
 	seqs = line[1:].split('\n>')
 	out = open(fnameout,'w')
-	for seq in seqs:
-		out.write('>%s\n' %  (d[seq.split(';')[0]]))
+	print seqs
+	if line.count('>') != 0:
+		for seq in seqs:
+			out.write('>%s\n' %  (d[seq.split(';')[0]]))
+	else:
+		pass
 	
 	try:
 		infile = open('temp_chimera.fas')
@@ -168,8 +177,25 @@ def run_uchime(fnamein, fnameout):
 		os.system('rm temp_chime_in.fas temp_chimeras.fas temp_no_chimeras.fas')
 	except IOError:
 		pass
-	
-	
+	out.close()
+
+def rename_sequences(infile, outfile):
+	infile = open(infile)
+	line = infile.read()
+	infile.close()
+	seqs = line[1:].split('\n>')
+	out  = open(outfile,'w')
+	for seq in seqs:
+		try:
+			new_name = seq.split('|')[3] + '|' + '_'.join(Renaming_d[seq.split('|')[3]][0].split()) + '|' + '_'.join(Renaming_d[seq.split('|')[3]][1].split()) + '|' + '_'.join(Renaming_d[seq.split('|')[3]][2].split())
+		except KeyError:
+			new_name = seq.split('\n')[0]
+		out.write('>%s\n%s\n' % (new_name, ''.join(seq.split('\n')[1:])))
+	out.close()
+
+
+
+
 
 	
 
@@ -291,63 +317,73 @@ while keep_running == 'yes':
 		silva_coord_dict = silva_blast_results[1]
 		print silva_coord_dict
 #		Write the accession numbers into text file 
-		out = open('temp_to_get_acs.txt','w')
-		for i in silva_parsed_acs:
-			out.write('%s\n' % (i))
-		out.close()
-#		pull passed sequences from the NCBI db
-		os.system('blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results_silva_untrimmed.fas' % (path_to_nt))
-#		run uchime
-#		Trim sequences based on best hit
-		infile = open('temp_results_silva_untrimmed.fas')
-		line = infile.read()
-		infile.close()
-		out = open('temp_results_silva.fas','w')
-		seqs = line[1:].split('\n>')
-		for i in seqs:
-			new_seq = ''.join(i.split('\n')[1:])
-			hit_len = int(silva_coord_dict[i.split('|')[3]][0]) - int(silva_coord_dict[i.split('|')[3]][1])
-			if hit_len > 0:
-				if float(hit_len)/float(len(new_seq)) < 0.8:
-					new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][0]):int(silva_coord_dict[i.split('|')[3]][1])]
-				else:
-					new_seq = new_seq
-			elif hit_len < 0:
-				if -float(hit_len)/float(len(new_seq)) < 0.8:
-					new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][1]):int(silva_coord_dict[i.split('|')[3]][0])]
-				else:
-					new_seq = new_seq
-			out.write('>%s\n%s\n' % (i.split('\n')[0], new_seq ))
-		out.close()
-		print 'removing chimeras'
-		print 'SHITSHITSHIT'
-		prdel = open('temp_results_silva.fas')
-		print prdel
-		print prdel.read()
-		run_uchime('temp_results_silva.fas', 'temp_results_silva_uchime.fas')
-		prdel = open('temp_results_silva.fas')
-		print prdel.readlines()
-#		remove short sequences
-		trim_short_seqs('temp_results_silva_uchime.fas', 'temp_results_silva_uchime_500.fas', 500)
-#		merge new sequences with old database
-		os.system('cat current_DB.fas temp_results_silva_uchime_500.fas > new_DB.fas')
-		os.system('mv new_DB.fas current_DB.fas')
-#		restart cycle with new sequences
-		os.system('mv temp_results_silva_uchime_500.fas new_round.fas')
-#		remove temporary files - move to ne folder
-		os.system('mkdir cycle_%s' % (c))
-		os.system('mv temp* cycle_%s' % (c))
-		os.system('cp current_DB.fas cycle_%s' % (c))
-#		check there are new sequences left
-		infile = open('new_round.fas')
-		line = infile.read()
-		infile.close()
-		if line == '':
+		if silva_parsed_acs != []:
+			out = open('temp_to_get_acs.txt','w')
+			for i in silva_parsed_acs:
+				out.write('%s\n' % (i))
+			out.close()
+#			pull passed sequences from the NCBI db
+			os.system('blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results_silva_untrimmed.fas' % (path_to_nt))
+#			run uchime
+#			Trim sequences based on best hit
+			infile = open('temp_results_silva_untrimmed.fas')
+			line = infile.read()
+			infile.close()
+			out = open('temp_results_silva.fas','w')
+			seqs = line[1:].split('\n>')
+			for i in seqs:
+				new_seq = ''.join(i.split('\n')[1:])
+				hit_len = int(silva_coord_dict[i.split('|')[3]][0]) - int(silva_coord_dict[i.split('|')[3]][1])
+				print hit_len
+				if hit_len > 0:
+				
+					if float(hit_len)/float(len(new_seq)) < 0.8:
+						new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][0]):int(silva_coord_dict[i.split('|')[3]][1])]
+					else:
+						new_seq = new_seq
+				elif hit_len < 0:
+					print -float(hit_len)/float(len(new_seq))
+					if -float(hit_len)/float(len(new_seq)) < 0.8:
+						print new_seq
+						new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][0]):int(silva_coord_dict[i.split('|')[3]][1])]
+						print new_seq
+					else:
+						new_seq = new_seq
+				out.write('>%s\n%s\n' % (i.split('\n')[0], new_seq ))
+			out.close()
+			print 'removing chimeras'
+			print 'SHITSHITSHIT'
+			prdel = open('temp_results_silva.fas')
+			print prdel
+			print prdel.read()
+			run_uchime('temp_results_silva.fas', 'temp_results_silva_uchime.fas')
+			prdel = open('temp_results_silva.fas')
+			print prdel.readlines()
+#			remove short sequences
+			trim_short_seqs('temp_results_silva_uchime.fas', 'temp_results_silva_uchime_500.fas', 500)
+#			merge new sequences with old database
+			os.system('cat current_DB.fas temp_results_silva_uchime_500.fas > new_DB.fas')
+			os.system('mv new_DB.fas current_DB.fas')
+#			restart cycle with new sequences
+			os.system('mv temp_results_silva_uchime_500.fas new_round.fas')
+#			remove temporary files - move to ne folder
+			os.system('mkdir cycle_%s' % (c))
+			os.system('mv temp* cycle_%s' % (c))
+			os.system('cp current_DB.fas cycle_%s' % (c))
+#			check there are new sequences left
+			infile = open('new_round.fas')
+			line = infile.read()
+			infile.close()
+			if line == '':
+				keep_running = 'no'
+		else:
 			keep_running = 'no'
 
 
-print confusing_sequences
 
+
+print confusing_sequences
+rename_sequences('current_DB.fas', 'current_DB_done.fas')
 
 #########TO ADD##########
 #re-recover short seqs
@@ -363,3 +399,4 @@ print confusing_sequences
 
 
 	
+
