@@ -202,7 +202,7 @@ def rename_sequences(infile, outfile):
 #####################################################################
 ############################SCRIPT ITSELF############################	
 #####################################################################
-os.system('makeblastdb -in %s -out %s -dbtype nucl' % (path_to_silva, path_to_silva))
+#os.system('makeblastdb -in %s -out %s -dbtype nucl' % (path_to_silva, path_to_silva))
 shortout = open('short_seqs_acs.txt', 'w')
 chimeraout = open('chimera_seqs_acs.txt', 'w')
 bad_hits = {}
