@@ -7,7 +7,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Iterative Taxon Level Specific Blast')
 parser.add_argument('-i', '--db', help='Dataset of sarting sequences in fasta format, inputy filename', required=True)
 parser.add_argument('-dbnt', '--path_to_nt', help='Path to NCBI nt database, string', required=True)
-parser.add_argument('-dbsi', '--path_to_silva', help='Path to Silva database, formated as DNA, string', required=True)
+parser.add_argument('-dbsi', '--path_to_silva', help='Path to Silva database containing Reference_DB.udb, tax_d.bin, and gb203_pr2_all_10_28_97p_noorg.udb', required=True)
 parser.add_argument('-n', '--num_seqs_per_round', help='Number of sequences recovered per blast, integer', required=True)
 parser.add_argument('-p', '--cpu', help='Number of cpu cores used for blast, integer', required=True)
 parser.add_argument('-g', '--group_name', help='Name of taxon group to be sampled', required=True)
@@ -36,7 +36,7 @@ print group_name
 
 
 #loads in the tax dictionary
-tax_d = pickle.load(open('tax_d.bin','rb'))
+tax_d = pickle.load(open(path_to_silva+'tax_d.bin','rb'))
 
 Renaming_d = {}
 
@@ -59,7 +59,11 @@ def nt_blast(query_file, num_seqs, outf):
 def silva_blast(query_file, outf):
 	coord_dict = {}
 	#os.system('blastn -task megablast -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt 6 -out %s' % (query_file, path_to_silva, cpu, 1, outf))
-	os.system('./usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' % (query_file, path_to_silva, cpu, outf))
+	#os.system('./usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' % (query_file, path_to_silva+'/Reference_DB.udb', cpu, outf))
+	if os.path.isfile('usearch') == False: 
+		os.system('usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' % (query_file, path_to_silva+'/Reference_DB.udb', cpu, outf))
+	else:	
+		os.system('./usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' % (query_file, path_to_silva+'/Reference_DB.udb', cpu, outf))
 	infile = open(outf)
 	lines = infile.readlines()
 	infile.close()
@@ -151,9 +155,9 @@ def run_uchime(fnamein, fnameout):
 		out.write('>%s;size=1;\n%s\n' % (seq.split('|')[3], ''.join(seq.split('\n')[1:])))
 	out.close()
 	if os.path.isfile('usearch') == False: 
-		os.system('usearch -uchime_ref temp_chime_in.fas -db gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus')
+		os.system('usearch -uchime_ref temp_chime_in.fas -db %s/gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus' % path_to_silva)
 	else:	
-		os.system('./usearch -uchime_ref temp_chime_in.fas -db gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus')
+		os.system('./usearch -uchime_ref temp_chime_in.fas -db %s/gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus' % path_to_silva)
 
 	infile = open('temp_no_chimeras.fas')
 	line = infile.read()
