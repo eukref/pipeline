@@ -31,12 +31,11 @@ print num_seq_per_round
 print cpu
 print group_name
 
-
-
 #loads in the tax dictionary
 tax_d = pickle.load(open('tax_d.bin','rb'))
 
 Renaming_d = {}
+
 
 #runs blast against NT database
 def nt_blast(query_file, num_seqs, outf):
@@ -53,6 +52,7 @@ def nt_blast(query_file, num_seqs, outf):
 	accset = set(acc)
 
 	return accset
+
 
 def silva_blast(query_file, outf):
 	coord_dict = {}
@@ -110,6 +110,7 @@ def load_fasta_file(fname):
 		d[seq.split('\n')[0]] = ''.join(seq.split('\n')[1:])
 	return d
 
+
 #removes sequences shorter then length
 def trim_short_seqs(fnamein, fnameout, length):
 	d = load_fasta_file(fnamein)
@@ -122,6 +123,7 @@ def trim_short_seqs(fnamein, fnameout, length):
 			else:
 				shortout.write('%s\n' % (i.split('|')[3]))
 
+
 #makes_empt_dict of accession numbers in fasta file
 def make_ac_dict(fname):
 	d = {}
@@ -133,6 +135,7 @@ def make_ac_dict(fname):
 		d[seq.split('|')[3]] = ''
 	print d
 	return d
+
 
 def run_uchime(fnamein, fnameout):
 	print fnamein
@@ -177,6 +180,7 @@ def run_uchime(fnamein, fnameout):
 		pass
 	out.close()
 
+
 def rename_sequences(infile, outfile):
 	infile = open(infile)
 	line = infile.read()
@@ -191,11 +195,6 @@ def rename_sequences(infile, outfile):
 		out.write('>%s\n%s\n' % (new_name, ''.join(seq.split('\n')[1:])))
 	out.close()
 
-
-
-
-
-	
 
 #####################################################################
 ############################SCRIPT ITSELF############################	
@@ -234,17 +233,10 @@ run_uchime(db, 'temp_initial_db.fas')
 print 'Removing short sequences from initial fasta file'
 trim_short_seqs('temp_initial_db.fas', 'new_round.fas', 500)
 
-
-
-
 #counter of cycles
 c = 0
 
-
 db_dict = load_fasta_file(db)
-
-
-
 
 #########################Start Cycling DB##########################
 #It is 'yes' until 
@@ -282,7 +274,6 @@ while keep_running == 'yes':
 			pass
 	print len(hits_acs)
 
-
 #	remove repeated BAD hits	
 	for i in hits_acs2:
 		try:
@@ -291,9 +282,7 @@ while keep_running == 'yes':
 		except KeyError:
 			pass
 	print len(hits_acs)
-	
-	
-
+		
 #Kill cycle if no new sequences
 	if len(hits_acs) == 0:
 		print 'NO NEW SEQUENCES'
@@ -378,8 +367,6 @@ while keep_running == 'yes':
 			keep_running = 'no'
 
 
-
-
 print confusing_sequences
 rename_sequences('current_DB.fas', 'current_DB_done.fas')
 
@@ -388,13 +375,3 @@ rename_sequences('current_DB.fas', 'current_DB_done.fas')
 #re-recover chimera seqs
 #deal with Genome sequences
 #add gi restricted blast to remove the already removed seqs - not it is little clumsy
-
-
-
-
-	
-
-
-
-	
-
