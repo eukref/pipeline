@@ -4,11 +4,7 @@ removes sequences that are annotated as "remove" in your figtree and passed thro
 python editfasta.py expandedclusters.txt current_DB.fas current_DB-cleared.fas
 """
 
-import os
 import sys
-import glob
-import re
-
 
 def oneline(infasta):
  infile = open('%s' %(infasta), "r")
