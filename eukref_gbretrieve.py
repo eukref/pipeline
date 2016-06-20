@@ -76,13 +76,15 @@ Renaming_d = {}
 
 # runs blast against NT database
 def nt_blast(query_file, num_seqs, outf):
+    OUTFORMAT = "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore sscinames scomnames sblastnames sskingdoms"
     os.system(
-        "blastn -task %s -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore sscinames scomnames sblastnames sskingdoms' -out %s" %
+        "blastn -task %s -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt '%s' -out %s" %
         (blast_method,
          query_file,
          path_to_nt,
          str(cpu),
          str(num_seqs),
+         OUTFORMAT,
          outf))
     infile = open(outf)
     lines = infile.readlines()
