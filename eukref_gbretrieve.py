@@ -201,7 +201,7 @@ def run_uchime(fnamein, fnameout):
                 seq.split('\n')[
                     1:])))
     out.close()
-    if os.path.isfile('usearch') == False:
+    if not os.path.isfile('usearch'):
         os.system('usearch -uchime_ref temp_chime_in.fas -db gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus')
     else:
         os.system('./usearch -uchime_ref temp_chime_in.fas -db gb203_pr2_all_10_28_97p_noorg.udb -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus')
@@ -297,14 +297,14 @@ while keep_running == 'yes':
     print 'starting cycle %s' % (int(c))
     # run usearch
     print 'running usearch'
-    if os.path.isfile('usearch') == False:
+    if not os.path.isfile('usearch'):
         os.system(
             'usearch -sortbylength new_round.fas -fastaout DB.sorted.fas -minseqlength 64')
     else:
         os.system(
             './usearch -sortbylength new_round.fas -fastaout DB.sorted.fas -minseqlength 64')
 
-    if os.path.isfile('usearch') == False:
+    if not os.path.isfile('usearch'):
         os.system(
             'usearch -cluster_smallmem DB.sorted.fas -id 0.97 -centroids temp_DB_clust.fas -uc temp_DB_clust.uc')
     else:
