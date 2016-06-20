@@ -103,7 +103,6 @@ def nt_blast(query_file, num_seqs, outf):
 
 def silva_blast(query_file, outf):
     coord_dict = {}
-    # os.system('blastn -task megablast -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt 6 -out %s' % (query_file, path_to_silva, cpu, 1, outf))
     os.system(
         './usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' %
         (query_file, path_to_silva, cpu, outf))
@@ -258,8 +257,8 @@ bad_hits = {}
 allowed = []
 confusing_sequences = []
 
-# ###################### Analyze initial DB #########################
 
+# ###################### Analyze initial DB #########################
 # Format New Sequences
 infile = open(db)
 line = infile.read()
