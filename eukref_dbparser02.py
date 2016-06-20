@@ -4,11 +4,7 @@ python annotateclusters.py thecamoebids.clustered.fasttree.txt thecamoebids.clus
 
 '''
 
-
-import os
 import sys
-import glob
-import re
 
 infile = open(sys.argv[1],"r")  ### tab delimited outfile of annotatetree.py
 lines = infile.readlines()
