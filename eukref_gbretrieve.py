@@ -101,7 +101,7 @@ def nt_blast(query_file, num_seqs, outf):
 
 def silva_blast(query_file, outf):
     coord_dict = {}
-    #os.system('blastn -task megablast -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt 6 -out %s' % (query_file, path_to_silva, cpu, 1, outf))
+    # os.system('blastn -task megablast -query %s -db %s -num_threads %s -max_target_seqs %s -outfmt 6 -out %s' % (query_file, path_to_silva, cpu, 1, outf))
     os.system(
         './usearch -usearch_local %s -db %s -strand both -maxhits 1 -id 0.8 -threads %s -blast6out %s' %
         (query_file, path_to_silva, cpu, outf))
@@ -123,10 +123,6 @@ def silva_blast(query_file, outf):
                     ac_hit].count('Archaea') > 0:
                 bad_hits[line.split('|')[0]] = 'This is bad hit'
                 print ac_hit, 'bacteria'
-            # elif tax_d[ac_hit].count('uncultured') and tax_d[ac_hit].count(group_name) == 0:
-            #	print 'confusing'
-
-            #	confusing_sequences.append(line.split('|')[3])
             elif float(p_id) > 95.0 and tax_d[ac_hit].count(group_name) == 0 and tax_d[ac_hit] not in allowed:
                 print 'bad hit'
                 bad_hits[line.split('|')[3]] = 'This is bad hit'
@@ -251,17 +247,16 @@ def rename_sequences(infile, outfile):
     out.close()
 
 
-#####################################################################
-############################SCRIPT ITSELF############################
-#####################################################################
-#os.system('makeblastdb -in %s -out %s -dbtype nucl' % (path_to_silva, path_to_silva))
+# ###################################################################
+# ######################### SCRIPT ITSELF ###########################
+# ###################################################################
 shortout = open('short_seqs_acs.txt', 'w')
 chimeraout = open('chimera_seqs_acs.txt', 'w')
 bad_hits = {}
 allowed = []
 confusing_sequences = []
 
-#########################Analyze initial DB##########################
+# ###################### Analyze initial DB #########################
 
 # Format New Sequences
 infile = open(db)
@@ -293,14 +288,14 @@ c = 0
 
 db_dict = load_fasta_file(db)
 
-#########################Start Cycling DB##########################
+# ###################### Start Cycling DB #########################
 # It is 'yes' until
 keep_running = 'yes'
 
 while keep_running == 'yes':
     c = c + 1
     print 'starting cycle %s' % (int(c))
-#	run usearch
+    # run usearch
     print 'running usearch'
     if os.path.isfile('usearch') == False:
         os.system(
@@ -316,16 +311,16 @@ while keep_running == 'yes':
         os.system(
             './usearch -cluster_smallmem DB.sorted.fas -id 0.97 -centroids temp_DB_clust.fas -uc temp_DB_clust.uc')
 
-#	remove seqs shorter 500
-#	trim_short_seqs('temp_DB_clust.fas', 'temp_DB_clust_500.fas', 500)
-#	print 'removing short sequences'
-#	remove species that are already in the database
+    # remove seqs shorter 500
+    # trim_short_seqs('temp_DB_clust.fas', 'temp_DB_clust_500.fas', 500)
+    # print 'removing short sequences'
+    # remove species that are already in the database
     print 'running blast'
     hits_acs = nt_blast(
         'temp_DB_clust.fas',
         num_seq_per_round,
         'temp_DB_clust_500.blastntab')
-#	remove_repeats when compared to current_DB.fas
+    # remove_repeats when compared to current_DB.fas
     dict_existing = make_ac_dict('current_DB.fas')
     hits_acs2 = list(hits_acs)
     for i in hits_acs2:
@@ -336,7 +331,7 @@ while keep_running == 'yes':
             pass
     print len(hits_acs)
 
-#	remove repeated BAD hits
+    # remove repeated BAD hits
     for i in hits_acs2:
         try:
             yup = bad_hits[i]
@@ -345,42 +340,42 @@ while keep_running == 'yes':
             pass
     print len(hits_acs)
 
-# Kill cycle if no new sequences
+    # Kill cycle if no new sequences
     if len(hits_acs) == 0:
         print 'NO NEW SEQUENCES'
         keep_running = 'no'
-# Keep running next cycle
+    # Keep running next cycle
     else:
-        #		write accessions into text file
+        # write accessions into text file
         out = open('temp_to_get_acs.txt', 'w')
         for i in hits_acs:
             out.write('%s\n' % (i))
         out.close()
-#		recover fasta file for accessions
+        # recover fasta file for accessions
         os.system(
             'blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results.fas' %
             (path_to_nt))
         trim_short_seqs('temp_results.fas', 'temp_results_500.fas', 500)
-# blast against Silva remove <70%ID and >95%ID other groups, This resturn
-# accession numbers
+        # blast against Silva remove <70%ID and >95%ID other groups, This returns
+        # accession numbers
         print 'blasting against SILVA'
         silva_blast_results = silva_blast(
             'temp_results_500.fas', 'temp_results.silvatab')
         silva_parsed_acs = silva_blast_results[0]
         silva_coord_dict = silva_blast_results[1]
         print silva_coord_dict
-#		Write the accession numbers into text file
+        # Write the accession numbers into text file
         if silva_parsed_acs != []:
             out = open('temp_to_get_acs.txt', 'w')
             for i in silva_parsed_acs:
                 out.write('%s\n' % (i))
             out.close()
-#			pull passed sequences from the NCBI db
+            # pull passed sequences from the NCBI db
             os.system(
                 'blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results_silva_untrimmed.fas' %
                 (path_to_nt))
-#			run uchime
-#			Trim sequences based on best hit
+            # run uchime
+            # Trim sequences based on best hit
             infile = open('temp_results_silva_untrimmed.fas')
             line = infile.read()
             infile.close()
@@ -419,22 +414,22 @@ while keep_running == 'yes':
                 'temp_results_silva_uchime.fas')
             prdel = open('temp_results_silva.fas')
             print prdel.readlines()
-#			remove short sequences
+            # remove short sequences
             trim_short_seqs(
                 'temp_results_silva_uchime.fas',
                 'temp_results_silva_uchime_500.fas',
                 500)
-#			merge new sequences with old database
+            # merge new sequences with old database
             os.system(
                 'cat current_DB.fas temp_results_silva_uchime_500.fas > new_DB.fas')
             os.system('mv new_DB.fas current_DB.fas')
-#			restart cycle with new sequences
+            # restart cycle with new sequences
             os.system('mv temp_results_silva_uchime_500.fas new_round.fas')
-#			remove temporary files - move to ne folder
+            # remove temporary files - move to ne folder
             os.system('mkdir cycle_%s' % (c))
             os.system('mv temp* cycle_%s' % (c))
             os.system('cp current_DB.fas cycle_%s' % (c))
-#			check there are new sequences left
+            # check there are new sequences left
             infile = open('new_round.fas')
             line = infile.read()
             infile.close()
@@ -443,11 +438,10 @@ while keep_running == 'yes':
         else:
             keep_running = 'no'
 
-
 print confusing_sequences
 rename_sequences('current_DB.fas', 'current_DB_done.fas')
 
-#########TO ADD##########
+# ####### TO ADD #########
 # re-recover short seqs
 # re-recover chimera seqs
 # deal with Genome sequences
