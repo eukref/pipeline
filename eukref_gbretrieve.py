@@ -290,10 +290,7 @@ c = 0
 db_dict = load_fasta_file(db)
 
 # ###################### Start Cycling DB #########################
-# It is 'yes' until
-keep_running = 'yes'
-
-while keep_running == 'yes':
+while True:
     c = c + 1
     print 'starting cycle %s' % (int(c))
     # run usearch
@@ -344,7 +341,7 @@ while keep_running == 'yes':
     # Kill cycle if no new sequences
     if len(hits_acs) == 0:
         print 'NO NEW SEQUENCES'
-        keep_running = 'no'
+        break
     # Keep running next cycle
     else:
         # write accessions into text file
@@ -435,9 +432,9 @@ while keep_running == 'yes':
             line = infile.read()
             infile.close()
             if line == '':
-                keep_running = 'no'
+                break
         else:
-            keep_running = 'no'
+            break
 
 print confusing_sequences
 rename_sequences('current_DB.fas', 'current_DB_done.fas')
