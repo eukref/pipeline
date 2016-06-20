@@ -5,9 +5,7 @@ python annotatetree.py thecamoebids.clustered.fasttree.nex thecamoebids.clustere
 
 """
 
-import os
 import sys
-import glob
 import re
 
 infile = open(sys.argv[1],"r")  ### annotated tree nexus file
