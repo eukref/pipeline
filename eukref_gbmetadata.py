@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+# Author: Javier del Campo
+# Date: August 2016
+# Usage: python eukref_gbmetadata.py outfile.txt infile.gb
+# Requires BioPython.  Download and installation instructions: http://biopython.org/wiki/Download
 
 import sys
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
-#Usage: $python eukref_gbmetadata.py outfile.txt infile.gb
 OUT = open(sys.argv[1], 'w')
 OUT.write("Accession\tTaxonomy\tName\tSource\tEnvironment\tHost\tCountry\tPublication\tAuthors\tJournal\n")
 result_handle = open(sys.argv[2])
@@ -12,7 +15,7 @@ for rec in gbfiles:
     acc = rec.id
     source = rec.features[0]
     if 'taxonomy' in rec.annotations:	
-        taxonomy = "_".join(rec.annotations['taxonomy'])
+        taxonomy = ";".join(rec.annotations['taxonomy'])
     if 'clone' in source.qualifiers:
         clone = source.qualifiers['clone'][0]
     elif 'organism' in rec.annotations:
@@ -20,7 +23,7 @@ for rec in gbfiles:
     else:
     	clone = "NA"
     if 'environmental_sample' in source.qualifiers:
-    	environmental_sample = "Environenmental"
+    	environmental_sample = "Environmental"
     else:
         environmental_sample = "Isolate"
     if 'isolation_source' in source.qualifiers:
@@ -46,4 +49,4 @@ for rec in gbfiles:
         journal = "NA"
     fields = [acc, taxonomy, clone, environmental_sample, isolation_source, host, country, title, authors, journal]
     OUT.write("\t".join(fields)+ "\n")
-OUT.close()			
+OUT.close()	
