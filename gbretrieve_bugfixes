@@ -1,0 +1,8 @@
+#have path_to_silva point to a directory containing Reference_DB.udb, tax_d.bin and gb203_pr2_all_10_28_97p_noorg.udb, and not to Reference_DB.udb file itself
+#needed to do this so that script can find tax_d.bin and gb203_pr2_all_10_28_97p_noorg.udb
+#therefore added path_to_silva in pointing to these files
+#and specified Reference_DB.udb where previously only path_to_silva was needed to point to this file 
+
+#modify usearch command in silva_blast function - have it like the other usearch commands in this script, to check if usearch is a "file" or executable, else use it from current directory.
+
+
