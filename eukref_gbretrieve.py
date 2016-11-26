@@ -262,19 +262,30 @@ def run_uchime(fnamein, fnameout):
 def out_accessions(infile, out_fasta_file, out_accessions_file):
 	out_acc = open(out_accessions_file, 'w')
 	out_fasta = open(out_fasta_file, 'w')
+	accessions = []
 	for line in open(infile, "U"):
 		if line.startswith(">"):
 			line = line.split(">")[1]
 			try:
 				# find the accession from GenBank format
 				acc = line.split('|')[3]
-				out_acc.write("%s\n" % (acc))
-				out_fasta.write(">%s\n" % (acc))
+				clean_acc = re.sub(r'\.[1-9]', '', acc)
+				if clean_acc in accessions:
+					next
+				else:
+					accessions.append(clean_acc)
+					out_acc.write("%s\n" % (clean_acc))
+					out_fasta.write(">%s\n" % (clean_acc))
 			except IndexError:
 			# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-				accession = seq.split(" ")[0]
-				out_acc.write("%s\n" % (accession))
-				out_fasta.write(">%s\n" % (accession))
+				acc = seq.split()[0]
+				clean_acc = re.sub(r'\.[1-9]', '', acc)
+				if clean_acc in accessions:
+					next
+				else:
+					accessions.append(clean_acc)				
+					out_acc.write("%s\n" % (clean_acc))
+					out_fasta.write(">%s\n" % (clean_acc))
 		else:
 			out_fasta.write("%s\n" % (line.strip()))
 				
