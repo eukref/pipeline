@@ -262,36 +262,49 @@ def run_uchime(fnamein, fnameout):
 def out_accessions(infile, out_fasta_file, out_accessions_file):
 	out_acc = open(out_accessions_file, 'w')
 	out_fasta = open(out_fasta_file, 'w')
-	accessions = []
 	current_DB = open(infile, "U").read()
-	seqs = current_DB.split('\n>')
+	seqs = current_DB[1:].split('\n>')
+	seq_d = {}
 	for seq in seqs:
-		lines = seq.split('\n')
-		rest_of_seq = '\n'.join(lines[1:])
-		for line in lines:
-			if line.startswith(">"):
-				line = line.split(">")[1]
-				try:
-					# find the accession from GenBank format
-					acc = line.split('|')[3]
-					clean_acc = re.sub(r'\.[1-9]', '', acc)
-					if clean_acc in accessions:
-						next
-					else:
-						accessions.append(clean_acc)
-						out_acc.write("%s\n" % (clean_acc))
-						
-						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
-				except IndexError:
-				# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-					acc = seq.split()[0]
-					clean_acc = re.sub(r'\.[1-9]', '', acc)
-					if clean_acc in accessions:
-						next
-					else:
-						accessions.append(clean_acc)				
-						out_acc.write("%s\n" % (clean_acc))
-						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
+		if seq.count('|') != 0:
+			acc = seq.split('|')[3]
+			clean_acc = re.sub(r'\.[1-9]', '', acc)
+			seq_d[clean_acc] = ''.join(seq.split('\n')[1:])
+		else:
+			acc = seq.split()[0]
+			clean_acc = re.sub(r'\.[1-9]', '', acc)
+			seq_d[clean_acc] = ''.join(seq.split('\n')[1:])
+	for i in seq_d:
+		out_fasta.write(">%s\n%s\n" % (i, seq_d[i]))
+		out_acc.write("%s\n" % (i))
+
+	
+# 		lines = seq.split('\n')
+# 		rest_of_seq = '\n'.join(lines[1:])
+# 		for line in lines:
+# 			if line.startswith(">"):
+# 				line = line.split(">")[1]
+# 				try:
+# 					# find the accession from GenBank format
+# 					acc = line.split('|')[3]
+# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
+# 					if clean_acc in accessions:
+# 						next
+# 					else:
+# 						accessions.append(clean_acc)
+# 						out_acc.write("%s\n" % (clean_acc))
+# 						
+# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
+# 				except IndexError:
+# 				# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
+# 					acc = seq.split()[0]
+# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
+# 					if clean_acc in accessions:
+# 						next
+# 					else:
+# 						accessions.append(clean_acc)				
+# 						out_acc.write("%s\n" % (clean_acc))
+# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
 
 				
 
