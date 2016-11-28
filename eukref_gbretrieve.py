@@ -262,60 +262,51 @@ def run_uchime(fnamein, fnameout):
 def out_accessions(infile, out_fasta_file, out_accessions_file):
 	out_acc = open(out_accessions_file, 'w')
 	out_fasta = open(out_fasta_file, 'w')
-	for line in open(infile, "U"):
-		if line.startswith(">"):
-			line = line.split(">")[1]
-			try:
-				# find the accession from GenBank format
-				acc = line.split('|')[3]
-				out_acc.write("%s\n" % (acc))
-				out_fasta.write(">%s\n" % (acc))
-			except IndexError:
-			# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-				accession = seq.split(" ")[0]
-				out_acc.write("%s\n" % (accession))
-				out_fasta.write(">%s\n" % (accession))
+	current_DB = open(infile, "U").read()
+	seqs = current_DB[1:].split('\n>')
+	seq_d = {}
+	for seq in seqs:
+		if seq.count('|') != 0:
+			acc = seq.split('|')[3]
+			clean_acc = re.sub(r'\.[1-9]', '', acc)
+			seq_d[clean_acc] = ''.join(seq.split('\n')[1:])
 		else:
-			out_fasta.write("%s\n" % (line.strip()))
+			acc = seq.split()[0]
+			clean_acc = re.sub(r'\.[1-9]', '', acc)
+			seq_d[clean_acc] = ''.join(seq.split('\n')[1:])
+	for i in seq_d:
+		out_fasta.write(">%s\n%s\n" % (i, seq_d[i]))
+		out_acc.write("%s\n" % (i))
+
+	
+# 		lines = seq.split('\n')
+# 		rest_of_seq = '\n'.join(lines[1:])
+# 		for line in lines:
+# 			if line.startswith(">"):
+# 				line = line.split(">")[1]
+# 				try:
+# 					# find the accession from GenBank format
+# 					acc = line.split('|')[3]
+# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
+# 					if clean_acc in accessions:
+# 						next
+# 					else:
+# 						accessions.append(clean_acc)
+# 						out_acc.write("%s\n" % (clean_acc))
+# 						
+# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
+# 				except IndexError:
+# 				# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
+# 					acc = seq.split()[0]
+# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
+# 					if clean_acc in accessions:
+# 						next
+# 					else:
+# 						accessions.append(clean_acc)				
+# 						out_acc.write("%s\n" % (clean_acc))
+# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
+
 				
-			
-#function for renaming sequences to place in tree. Start with header default from GenBank. End up with >accession_name_from_genbank
-# def rename_sequences(infile, outfile):
-# 	out = open(outfile, 'w')
-# 	for l in open(infile, "U"):
-# 		if l.startswith(">"):
-# 			line = l.split(">")[1]  
-# 			# bunch of lines that remove annoying bits from fasta header
-#  			line = line.strip().replace(" 18S ribosomal RNA gene, partial sequence", "")
-#  			line = line.replace(" 18S ribosomal RNA, partial sequence", "")
-#  			line = line.replace(" 18S small subunit ribosomal RNA_gene, complete sequence", "")
-#  			line = line.replace(" gene for 18S rRNA, partial sequence", "")
-#  			line = line.replace(" partial 18S rRNA gene", "")
-#  			line = line.replace(" small subunit ribosomal RNA gene, partial sequence", "")
-#  			acc = line.split('|')[3].strip('.[1-9]')
-#  			label = line.split(" ")
-#  			new_label = "_".join(label[1:])
-#  			out.write(">%s_%s\n" % (acc, new_label))
-#  		else:
-#  			out.write("%\n" % (l.strip()))
-#  	out.close()
-
-# Martin's function for renaming sequences
-# def rename_sequences(infile, outfile):
-#     infile = open(infile)
-#     line = infile.read()
-#     infile.close()
-#     seqs = line[1:].split('\n>')
-#     out = open(outfile, 'w')
-#     for seq in seqs:
-#         try:
-#             new_name = seq.split('|')[3] + '|' + '_'.join(Renaming_d[seq.split('|')[3]][0].split()) + '|' + '_'.join(
-#                 Renaming_d[seq.split('|')[3]][1].split()) + '|' + '_'.join(Renaming_d[seq.split('|')[3]][2].split())
-#         except KeyError:
-#             new_name = seq.split('\n')[0]
-#         out.write('>%s\n%s\n' % (new_name, ''.join(seq.split('\n')[1:])))
-#     out.close()
-
 
 # ###################################################################
 # ######################### SCRIPT ITSELF ###########################

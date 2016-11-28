@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+print "\nScript for parsing GenBank metadata and renaming fasta file for annotation." 
+print "Contributors: Javier del Campo and Laura Wegener Parfrey"
+print "22 November 2016"
+print "\nrun: python eukref_gbmetadata.py -h for help.\n"
+
 import os
-import pickle
 import argparse
-from sys import argv
 import re
-import argparse
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
 
@@ -20,6 +22,7 @@ parser.add_argument(
     help='Path to GenBank formatted file with accessions to be renamed. Get this file from the NCBI nucleotide database online (see pipeline overview)',
     required=False)
 parser.add_argument(
+    '-t', 
     '--ref_tax',
     help='Path to reference database taxonomy file formatted accession \t taxonomy. E.g. SIVLA 128 full taxa map file. Reference database taxonomy will be added to the metadata file',
     required=False)
@@ -218,6 +221,61 @@ def metadata_retrieve(infile, outfile):
 			OUT.write("\t".join(fields)+ "\n")
 	OUT.close()			
 
+def rename_sequences_ref(in_gb, infile, ref_acc, outfile):
+	# initialize gb_tax dict to store accession, last taxonomy level, and organism name
+	gb_tax = {}
+	#result_handle = open(in_gb, "U")
+	# parse gb file; block to go through gb file for acc not in ref
+	gbfiles = SeqIO.parse(in_gb, 'gb')
+	# make dict of acc, last level, organism
+	for rec in gbfiles:
+		acc = rec.id
+		clean_acc = re.sub(r'\.[1-9]', '', acc)
+		#print clean_acc
+		if clean_acc in ref_acc:
+			next
+		else:
+			if 'organism' in rec.annotations:
+				organism = rec.annotations['organism']
+			if 'taxonomy' in rec.annotations:	
+				# get last level of taxonomy
+				taxonomy = rec.annotations['taxonomy']
+				# add accession plus last taxonomy level and organism name to tax dict
+				name = taxonomy[-1]+"_"+ organism
+				name = name.replace(" ", "_")
+				#print name
+				gb_tax[clean_acc] = name
+
+	# go through fasta file. Match accessions first to reference taxonomy (ref_acc) then to gb_tax
+	for line in open(infile, "U"):
+		if line.startswith(">"):
+			#seq_acc = None
+			if "_" in line:
+				seq_acc = line.split("_")[0]
+				seq_acc = seq_acc.replace(">", "")
+			else:
+				seq_acc = line.split()[0]
+				seq_acc = seq_acc.replace(">", "")
+			if seq_acc in ref_acc:
+				taxonomy = ref_acc[seq_acc]
+				#name = None
+				if "; __" in taxonomy:
+					last_level = taxonomy.split("; __")
+					name = '_'.join(last_level[-2:])
+					#tax[seq_acc] = '_'.join(last_level[-2:-1])
+				else:
+					last_level = taxonomy.split(";")
+					name = '_'.join(last_level[-2:])
+				outfile.write(">%s_%s\n" % (seq_acc,name))
+			elif seq_acc in gb_tax:
+				outfile.write(">%s_%s\n" % (seq_acc, gb_tax[seq_acc]))
+			# incase accession is missing. 
+			else:
+				outfile.write("%s\n" % (line.strip()))
+		else:
+			outfile.write("%s\n" % (line.strip()))
+				
+
 
 # ###################################################################
 # ######################### SCRIPT ITSELF ###########################
@@ -232,8 +290,7 @@ if args.ref_tax is not None:
 		# split by \t
 		acc = line.strip().split('\t')
 		ref_accessions[acc[0]] = acc[1]
-		#print ref_accessions[acc[0]]	
-		
+		#print ref_accessions[acc[0]]			
 
 
 # run  eukref_gbmetadata.py version that also reports reference taxonomy if given gb file AND given reference taxonomy file (e.g. Silva taxonomy file)
@@ -251,10 +308,17 @@ if args.outgroup is not None:
 	# run outgroup renaming and write outgroup seqs to outfile
 	rename_outgroup(outgroup, outfasta)
 	
+# fasta renaming. Add loop and function for cases when metadata file and reference accessions also passed. 
+# if passed a fasta file as input will run function to rename fasta headers. Done based on 
+# if args.input_fasta_file_fp is not None and args.ref_tax is None:
+#	rename_sequences(input_fasta_file_fp, outfasta)
 
-# if passed a fasta file as input will run function to rename fasta headers
-if args.input_fasta_file_fp is not None:
-	rename_sequences(input_fasta_file_fp, outfasta)
+print input_fasta_file_fp 
+
+# doesn't really make sense to only use ref info - should also use gb record. 
+if args.input_fasta_file_fp is not None and args.ref_tax is not None and args.input_gb_file_fp is not None: 
+	# need to make this function
+	rename_sequences_ref(input_gb_file_fp, input_fasta_file_fp, ref_accessions, outfasta)
 
 outfasta.close()
 outmeta.close()
