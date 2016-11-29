@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 print "\nScript for parsing GenBank metadata and renaming fasta file for annotation." 
-print "Contributors: Javier del Campo and Laura Wegener Parfrey"
-print "22 November 2016"
+#print "Contributors: Javier del Campo and Laura Wegener Parfrey"
+#print "22 November 2016"
 print "\nrun: python eukref_gbmetadata.py -h for help.\n"
 
 import os
@@ -72,29 +72,6 @@ def rename_outgroup(infile, outfile):
 		else:
 			outfile.write(line)
 
-
-# this function should 1) Check input fasta for duplicates. 2) write out accessions and include name? or taxonomy? or SILVA taxonomy?
-
-# function for renaming fasta file header using metadata information. 
-#Should add in processing of the gb file?
-# out sequence (which should be viewable in tree) name should be >accession_taxonomy_name
-def rename_sequences(infile, outfile):
-	for line in open(infile, 'U'):
-		if line.startswith(">"):
-			seq_header = line.split(">")[1]
-			seq_header = seq_header.strip().replace(" 18S ribosomal RNA gene, partial sequence", "")
-			seq_header = seq_header.replace(" 18S ribosomal RNA, partial sequence", "")
-			seq_header = seq_header.replace(" 18S small subunit ribosomal RNA_gene, complete sequence", "")
-			seq_header = seq_header.replace(" gene for 18S rRNA, partial sequence", "")
-			seq_header = seq_header.replace(" partial 18S rRNA gene", "")
-			seq_header = seq_header.replace(" small subunit ribosomal RNA gene, partial sequence", "")
-			acc = line.split('|')[3]
-			clean_acc = re.sub(r'\.[1-9]', '', acc)
-			label = seq_header.split(" ")
-			new_label = "_".join(label[1:])
-			outfile.write(">%s_%s\n" % (clean_acc, new_label.strip()))
-		else:
-			outfile.write("%s\n" % (line.strip()))
 
 
 # function to print metadata in tab delimited format based on gb formatted input file. 
@@ -301,24 +278,19 @@ if args.input_gb_file_fp is not None and args.ref_tax is not None:
 #run eukref_gbmetadata.py if gb file given. 
 if args.input_gb_file_fp is not None and args.ref_tax is None:
 	metadata_retrieve(input_gb_file_fp, outmeta)
-	print "retrieving metadata"
-
+	print "metadata file is %s" % (outmeta)
+	
 
 if args.outgroup is not None:
 	# run outgroup renaming and write outgroup seqs to outfile
 	rename_outgroup(outgroup, outfasta)
 	
-# fasta renaming. Add loop and function for cases when metadata file and reference accessions also passed. 
-# if passed a fasta file as input will run function to rename fasta headers. Done based on 
-# if args.input_fasta_file_fp is not None and args.ref_tax is None:
-#	rename_sequences(input_fasta_file_fp, outfasta)
-
-print input_fasta_file_fp 
 
 # doesn't really make sense to only use ref info - should also use gb record. 
 if args.input_fasta_file_fp is not None and args.ref_tax is not None and args.input_gb_file_fp is not None: 
 	# need to make this function
 	rename_sequences_ref(input_gb_file_fp, input_fasta_file_fp, ref_accessions, outfasta)
-
+	print "fasta file for tree is %s" % (outfasta)
+	
 outfasta.close()
 outmeta.close()
