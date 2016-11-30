@@ -230,6 +230,12 @@ def rename_sequences_ref(in_gb, infile, ref_acc, outfile):
 			if "_" in line:
 				seq_acc = line.split("_")[0]
 				seq_acc = seq_acc.replace(">", "")
+			# case of old gb format with >gi|noginumber|gb|KT210044 
+			elif "|" in line:
+				acc = seq.split('|')[3]
+				seq_acc = re.sub(r'\.[1-9]', '', acc)
+				seq_acc = seq_acc.replace(">", "")
+			# case of just accession # in header, or accession followed by white space
 			else:
 				seq_acc = line.split()[0]
 				seq_acc = seq_acc.replace(">", "")
