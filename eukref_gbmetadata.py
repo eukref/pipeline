@@ -79,7 +79,7 @@ def rename_outgroup(infile, outfile):
 def metadata_retrieve_ref(infile, outfile, ref_accessions):
 	# original script from here
 	OUT = outmeta
-	OUT.write("accession\tgenbank_taxonomy\treference_taxonomy\torganism_name\tclone_name\tsource\tenvironment\thost\tcountry\tpublication\tauthors\tjournal\n")
+	OUT.write("accession\tgenbank_taxonomy\treference_taxonomy\torganism_name_gb\tclone_name_gb\tsource_gb\tenvironment_gb\thost_gb\tcountry_gb\tpublication_gb\tauthors_gb\tjournal_gb\n")
 	result_handle = open(infile, "U")
 	# array to make sure each accession is uniq. 
 	uniq_acc = []
@@ -144,7 +144,7 @@ def metadata_retrieve(infile, outfile):
 	accessions = {}
 	# original script from here
 	OUT = outmeta
-	OUT.write("accession\tgenbank_taxonomy\torganism_name\tclone_name\tsource\tenvironment\thost\tcountry\tpublication\tauthors\tjournal\n")
+	OUT.write("accession\tgenbank_taxonomy\torganism_name_gb\tclone_name_gb\tsource_gb\tenvironment_gb\thost_gb\tcountry_gb\tpublication_gb\tauthors_gb\tjournal_gb\n")
 	result_handle = open(infile, "U")
 	uniq_acc = []
 	gbfiles = SeqIO.parse(result_handle, 'gb')
