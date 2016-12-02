@@ -36,8 +36,12 @@ for line in open(tree, "U"):
 	if "[&!" in line:
 		# get annotation
 		annotation = line.split('"')[1]
-		accession = line.strip().split('_')[0]
-		accession = accession.strip("'").strip()
+		accession = line.split('[&!')[0]
+		accession.strip()
+		accession = accession.split('_')[0]
+		accession = accession.split('.')[0]
+		accession = accession.split()[0]
+		accession = accession.strip("'")
 		tree_annotations[accession] = annotation
 		#print "%s\t%s" % (accession, annotation)
 		
