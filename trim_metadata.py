@@ -8,10 +8,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-i',
     '--input_fasta',
-    help='Clustered Reference Tree',
+    help='Clustered Reference Fasta File',
     required=True)
 parser.add_argument(
-    '-c',
+    '-m',
     '--input_metadatafile',
     help='Metadata File',
     required=True)
