@@ -144,7 +144,7 @@ def metadata_retrieve(infile, outfile):
 	accessions = {}
 	# original script from here
 	OUT = outmeta
-	OUT.write("accession\ttaxonomy\torganism_name\tclone_name\tsource\tenvironment\thost\tcountry\tpublication\tauthors\tjournal\n")
+	OUT.write("accession\tgenbank_taxonomy\torganism_name\tclone_name\tsource\tenvironment\thost\tcountry\tpublication\tauthors\tjournal\n")
 	result_handle = open(infile, "U")
 	uniq_acc = []
 	gbfiles = SeqIO.parse(result_handle, 'gb')
