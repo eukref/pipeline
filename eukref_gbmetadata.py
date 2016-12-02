@@ -24,7 +24,7 @@ parser.add_argument(
 parser.add_argument(
     '-t', 
     '--ref_tax',
-    help='Path to reference database taxonomy file formatted accession \t taxonomy. E.g. SIVLA 128 full taxa map file. Reference database taxonomy will be added to the metadata file',
+    help='Path to reference database taxonomy file formatted accession \t taxonomy. E.g. SILVA 128 full taxa map file. Reference database taxonomy will be added to the metadata file',
     required=False)
 parser.add_argument(
     '-i',
@@ -79,7 +79,7 @@ def rename_outgroup(infile, outfile):
 def metadata_retrieve_ref(infile, outfile, ref_accessions):
 	# original script from here
 	OUT = outmeta
-	OUT.write("Accession\tTaxonomy\tReference_taxonomy\tOrganism\tclone\tSource\tEnvironment\tHost\tCountry\tPublication\tAuthors\tJournal\n")
+	OUT.write("accession\tgenbank_taxonomy\treference_taxonomy\torganism_name_gb\tclone_name_gb\tsource_gb\tenvironment_gb\thost_gb\tcountry_gb\tpublication_gb\tauthors_gb\tjournal_gb\n")
 	result_handle = open(infile, "U")
 	# array to make sure each accession is uniq. 
 	uniq_acc = []
@@ -144,7 +144,7 @@ def metadata_retrieve(infile, outfile):
 	accessions = {}
 	# original script from here
 	OUT = outmeta
-	OUT.write("Accession\tTaxonomy\tOrganism\tclone\tSource\tEnvironment\tHost\tCountry\tPublication\tAuthors\tJournal\n")
+	OUT.write("accession\tgenbank_taxonomy\torganism_name_gb\tclone_name_gb\tsource_gb\tenvironment_gb\thost_gb\tcountry_gb\tpublication_gb\tauthors_gb\tjournal_gb\n")
 	result_handle = open(infile, "U")
 	uniq_acc = []
 	gbfiles = SeqIO.parse(result_handle, 'gb')
