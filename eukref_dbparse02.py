@@ -47,16 +47,28 @@ centroid_d = {}
 
 for line in lines:
 	if line.split()[0] == 'S':
-		centroid_d[line.split('\t')[1]] = line.split('\t')[8]
+		accession_rec = line.split('\t')[8]
+		print accession_rec
+		accession_rec = accession_rec.split()[0]
+                print accession_rec
+		accession_rec = accession_rec.split("_")[0]
+                print accession_rec
+		accession_rec = accession_rec.split(".")[0]
+		print accession_rec
+		centroid_d[line.split('\t')[1]] = accession_rec
 	else:
 		pass
 print centroid_d
 acc_centroid_d = {}
 for line in lines:
-	print line
-	print centroid_d[line.split('\t')[1]]
-	print acc_centroid_d
-	acc_centroid_d[line.split('\t')[8]] = centroid_d[line.split('\t')[1]]
+#	print line
+#	print centroid_d[line.split('\t')[1]]
+#	print acc_centroid_d
+	accession_rec = line.split('\t')[8]
+        accession_rec = accession_rec.split()[0]
+      	accession_rec = accession_rec.split("_")[0]
+       	accession_rec = accession_rec.split(".")[0]
+	acc_centroid_d[accession_rec] = centroid_d[line.split('\t')[1]]
 
 #print acc_centroid_d	
 #print acc_centroid_d['AF315604']
@@ -86,14 +98,16 @@ print acc_centroid_d
 out = open(out_file, 'w')
 
 for acc in meta_d:
-	print acc
+#	print acc
 	try:
 		out.write('%s\t%s\n' % (meta_d[acc], trim_d[acc_centroid_d[acc]]))
 	except KeyError:
 		print 'WARNING accession number %s does no exist in cluster file' % (acc)
-		out.write('%s %s\n' % (meta_d[acc], trim_d[acc]))
+		out.write('%s\t%s\n' % (meta_d[acc], trim_d[acc]))
 out.close()
 
+
+print acc_centroid_d
 	
  
 
