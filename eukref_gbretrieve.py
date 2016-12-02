@@ -332,8 +332,10 @@ for seq in seqs:
         out.write('>%s\n' % (seq))
     except IndexError:
     	# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-		accession = seq.split(" ")[0]
-		out.write('>gi|noginumber|gb|%s| %s\n' % (accession, seq))
+	accession = seq.split()[0]
+	print '>gi|nogi|gb|%s\n' % (accession)
+	sequence = ''.join(seq.split('\n')[1:])
+	out.write('>gi|noginumber|gb|%s|\n%s\n' % (accession, sequence))
     acc_count = acc_count + 1
 out.close()
 
