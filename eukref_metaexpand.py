@@ -2,8 +2,8 @@
 print "\nexpands clusters" 
 print "Contributors: Matthew Brown, Laura Wegener Parfrey, and Evan Morien"
 print "November 2016"
-print "\nrun: python eukref_metaexpanse.py -h for help.\n"
-print "\nExample run: python eukref_metaexpanse.py -i Metadata_File -r reference_metadata_file -c current_DB.clusters.uc  -o expandedclusters.txt\n"
+print "\nrun: python eukref_metaexpand.py -h for help.\n"
+print "\nExample run: python eukref_metaexpand.py -i Metadata_File -r reference_metadata_file -c current_DB.clusters.uc  -o expandedclusters.txt\n"
 
 
 import sys
