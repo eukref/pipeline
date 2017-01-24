@@ -33,8 +33,7 @@ out_metadata = open(outfile, "w")
 
 tree_annotations = {}
 for line in open(tree, "U"):
-	if "[&!" in line and not ";" in line:
-		# get annotation
+	if "[&!" in line and not line.endswith(";"):
 		annotation = line.split('"')[1]
 		accession = line.split('[&!')[0]
 		accession.strip()
@@ -49,7 +48,7 @@ for line in open(metadata, "U"):
 		
 	parts = line.strip().split("\t")
 	acc = parts[0]
-	if line.startswith("Accession"):
+	if line.startswith("Accession") or line.startswith("accession"):
 		parts.append("Annotation")
 	elif acc in tree_annotations:
 		parts.append(tree_annotations[acc])
