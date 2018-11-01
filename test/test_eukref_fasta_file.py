@@ -1,6 +1,7 @@
 import unittest
 import random
 import os
+import shutil as sh
 
 from eukref.eukref_fasta_file import *
 
@@ -43,7 +44,7 @@ class TestEukrefFastaFile(unittest.TestCase):
         f.entries[0].id = 'test'
         f.entries[0].name = ''
         f.entries[0].description = ''
-        f.save(self.TMP_FILE_2)
+        f.save_as(self.TMP_FILE_2)
 
         self.assertTrue(os.path.isfile(self.TMP_FILE_2))
         with open(self.TMP_FILE_2) as file:
@@ -52,7 +53,7 @@ class TestEukrefFastaFile(unittest.TestCase):
     def test_headers_normalization(self):
         f = EukrefFastaFile(self.TMP_FILE)
         f.normalize_headers()
-        f.save(self.TMP_FILE_2)
+        f.save_as(self.TMP_FILE_2)
 
         headers = [self.ACC_1, self.ACC_2, self.ACC_3]
 
@@ -61,9 +62,13 @@ class TestEukrefFastaFile(unittest.TestCase):
             for i, line in enumerate(hdrs):
                 self.assertEqual(line.strip().replace('>', ''), headers[i])
 
-    @unittest.skip('not implemented')
     def test_filtering(self):
-        pass
+        f = EukrefFastaFile(self.TMP_FILE)
+        f.entries[0].seq = 'GTA'
+
+        f.filter_short(10)
+        self.assertEqual(len(f.entries), 2)
+        self.assertEqual(f.entries[0].description, self.HEADER_2)
 
     def test_reloading(self):
         f = EukrefFastaFile(self.TMP_FILE)
@@ -74,6 +79,15 @@ class TestEukrefFastaFile(unittest.TestCase):
 
         f.reload()
         self.assertEqual(4, len(f.entries))
+
+    def test_uchime(self):
+        ref_path = 'data/reference.fasta'
+
+        f = EukrefFastaFile(self.TMP_FILE)
+        f.uchime_and_save(ref_path, quiet=True)
+
+        self.assertEqual(4, len(f.entries))
+        self.assertFalse(os.path.isfile('tmp_uchimed.fasta'))
 
     @staticmethod
     def _generate_random_seq():

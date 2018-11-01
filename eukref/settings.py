@@ -27,6 +27,11 @@ def parse_arguments():
                         default=utils.eukref_root('data', 'ncbi_nt'),
                         help="Path do folder with NCBI NT database")
 
+    parser.add_argument("-r", "--ref",
+                        required=True,
+                        type=argparse.FileType('r'),
+                        help="Path to Reference database, formatted as DNA, string")
+
     parsed = parser.parse_args()
     format_arguments(parsed)
     return parsed

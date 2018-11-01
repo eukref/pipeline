@@ -3,3 +3,5 @@
 *.idea
 *.pbs
 *.DS_Store
+data/*
+tmp/*
