@@ -75,7 +75,7 @@ parser.add_argument(
     '--taxonomy_dict',
     help='path to taxonomy dictionary - file tax_d.bin',
     required=True)
-    
+
 args = parser.parse_args()
 
 db = args.db
@@ -88,7 +88,6 @@ percent_id_nt = float(args.percent_identity_nt)
 percent_id_silva = float(args.percent_identity_ReferenceDB)
 blast_method = args.nt_blast_method
 taxonomy_dict_file = args.taxonomy_dict
-
 
 print db
 print path_to_nt
@@ -104,6 +103,13 @@ Renaming_d = {}
 
 os.system("usearch -makeudb_usearch Reference_DB.fas -output Reference_DB.udb")
 os.system("usearch -makeudb_usearch gb203_pr2_all_10_28_97p_noorg.fasta -output gb203_pr2_all_10_28_97p_noorg.udb")
+
+def get_acc(ncbi_header):
+    if ncbi_header.count('|') == 0:
+        acc_number = ncbi_header.split()[0]
+    else:
+        acc_number = ncbi_header.split('|')[3]
+    return acc_number
 
 # runs blast against NT database
 def nt_blast(query_file, num_seqs, outf):
@@ -124,9 +130,9 @@ def nt_blast(query_file, num_seqs, outf):
     # this is the part that renames the seq.  
     for line in lines:
         if float(line.split()[2]) >= float(percent_id_nt):
-            hit_column = line.split()[1]
-            acc.append(hit_column.split('|')[3])
-            Renaming_d[hit_column.split('|')[3]] = [line.split(
+            hit_column = line.split('\t')[1]
+            acc.append(get_acc(hit_column))
+            Renaming_d[get_acc(hit_column)] = [line.split(
                 '\t')[-4], line.split('\t')[-2], line.split('\t')[-1]]
     accset = set(acc)
 
@@ -147,27 +153,27 @@ def silva_blast(query_file, outf):
         p_id = line.split()[2]
         ac_hit = line.split()[1]
         ac_hit = ac_hit.split('.')[0]
-        jaba = 0
-        if ac_hit not in done:
-            done.append(line.split('|')[3])
-            jaba = jaba + 1
-            if tax_d[ac_hit].count('Bacteria') > 0 or tax_d[
-                    ac_hit].count('Archaea') > 0:
-                bad_hits[line.split('|')[0]] = 'This is bad hit'
-             #   print ac_hit, 'bacteria'
-            elif float(p_id) > 95.0 and tax_d[ac_hit].count(group_name) == 0 and tax_d[ac_hit] not in allowed:
-             #   print 'bad hit'
-                bad_hits[line.split('|')[3]] = 'This is bad hit'
-             #   print tax_d[ac_hit]
-             #   print ac_hit
-            elif float(p_id) < float(percent_id_silva):
-                bad_hits[line.split('|')[3]] = 'This is bad hit'
-             #   print ac_hit
-              #  print float(p_id)
-            else:
-                coord_dict[line.split('|')[3]] = (
-                    line.split()[6], line.split()[7])
-                acc.append(line.split('|')[3])
+        jaba = 0 
+        #if ac_hit not in done:  #why am I doing this?
+        done.append(get_acc(line.split()[0]))
+        jaba = jaba + 1
+        if tax_d[ac_hit].count('Bacteria') > 0 or tax_d[
+                ac_hit].count('Archaea') > 0:
+            bad_hits[get_acc(line.split()[0])] = 'This is bad hit'
+         #   print ac_hit, 'bacteria'
+        elif float(p_id) > 95.0 and tax_d[ac_hit].count(group_name) == 0 and tax_d[ac_hit] not in allowed:
+         #   print 'bad hit'
+            bad_hits[get_acc(line.split()[0])] = 'This is bad hit'
+        #    print tax_d[ac_hit]
+        #    print ac_hit
+        elif float(p_id) < float(percent_id_silva):
+            bad_hits[get_acc(line.split()[0])] = 'This is bad hit'
+            #   print ac_hit
+            #  print float(p_id)
+        else:
+            coord_dict[get_acc(line.split()[0])] = (
+                line.split()[6], line.split()[7])
+            acc.append(get_acc(line.split()[0]))
 #    print acc
 #    print len(acc)
     return (acc, coord_dict)
@@ -197,7 +203,7 @@ def trim_short_seqs(fnamein, fnameout, length):
             if len(d[i]) > int(length) and len(d[i]) < 5000:
                 out.write('>%s\n%s\n' % (i, d[i]))
             else:
-                shortout.write('%s\n' % (i.split('|')[3]))
+                shorts_d[i] = d[i]
 
 
 # makes_empt_dict of accession numbers in fasta file
@@ -208,7 +214,7 @@ def make_ac_dict(fname):
     infile.close()
     seqs = line[1:].split('\n>')
     for seq in seqs:
-        d[seq.split('|')[3]] = ''
+        d[get_acc(seq.split('\n')[0])] = ''
     #print d
     return d
 
@@ -223,16 +229,21 @@ def run_uchime(fnamein, fnameout):
     #print seqs
     out = open('temp_chime_in.fas', 'w')
     for seq in seqs:
-        d[seq.split('|')[3]] = seq
+        print '*********'
+        print seq
+        print get_acc(seq.split('\n')[0])
+        d[get_acc(seq.split('\n')[0])] = seq
         out.write(
             '>%s;size=1;\n%s\n' %
-            (seq.split('|')[3],
+            (get_acc(seq.split('\n')[0]),
              ''.join(
                 seq.split('\n')[
                     1:])))
     out.close()
-    os.system('usearch -uchime_ref temp_chime_in.fas -db %s -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus' % (path_to_silva))
-
+#    os.system('usearch -uchime_ref temp_chime_in.fas -db %s -nonchimeras temp_no_chimeras.fas -chimeras temp_chimeras.fas -strand plus' % (path_to_silva))
+    os.system('vsearch --uchime_ref temp_chime_in.fas --db %s --nonchimeras temp_absolutely_no_chimeras.fas --borderline temp_maybe_chimeras.fas --chimeras temp_chimeras.fas' % (path_to_silva))
+    os.system('cat temp_absolutely_no_chimeras.fas temp_maybe_chimeras.fas > temp_no_chimeras.fas')
+    os.system('rm temp_absolutely_no_chimeras.fas temp_maybe_chimeras.fas')
     infile = open('temp_no_chimeras.fas')
     line = infile.read()
     infile.close()
@@ -246,15 +257,15 @@ def run_uchime(fnamein, fnameout):
         pass
 
     try:
-        infile = open('temp_chimera.fas')
+        infile = open('temp_chimeras.fas')
         line = infile.read()
         infile.close()
         seqs = line[1:].split('\n>')
         for seq in seqs:
-            chimeraout.write('%s\n' % (seq.split('|')[3]))
+            chimeras_d[seq.split('\n')[0]] = ''.join(seq.split('\n')[1:])
         os.system('rm temp_chime_in.fas temp_chimeras.fas temp_no_chimeras.fas')
     except IOError:
-        pass
+        print 'no_chimera_file'
     out.close()
 
 
@@ -278,52 +289,40 @@ def out_accessions(infile, out_fasta_file, out_accessions_file):
 		out_fasta.write(">%s\n%s\n" % (i, seq_d[i]))
 		out_acc.write("%s\n" % (i))
 
-	
-# 		lines = seq.split('\n')
-# 		rest_of_seq = '\n'.join(lines[1:])
-# 		for line in lines:
-# 			if line.startswith(">"):
-# 				line = line.split(">")[1]
-# 				try:
-# 					# find the accession from GenBank format
-# 					acc = line.split('|')[3]
-# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
-# 					if clean_acc in accessions:
-# 						next
-# 					else:
-# 						accessions.append(clean_acc)
-# 						out_acc.write("%s\n" % (clean_acc))
-# 						
-# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
-# 				except IndexError:
-# 				# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-# 					acc = seq.split()[0]
-# 					clean_acc = re.sub(r'\.[1-9]', '', acc)
-# 					if clean_acc in accessions:
-# 						next
-# 					else:
-# 						accessions.append(clean_acc)				
-# 						out_acc.write("%s\n" % (clean_acc))
-# 						out_fasta.write(">%s\n%s" % (clean_acc, rest_of_seq))
-
 				
 
 # ###################################################################
 # ######################### SCRIPT ITSELF ###########################
 # ###################################################################
-shortout = open('short_seqs_acc.txt', 'w')
-chimeraout = open('chimera_seqs_acc.txt', 'w')
+#shortout = open('short_seqs_acc.txt', 'w')
+#chimeraout = open('chimera_seqs_acc.txt', 'w')
+
+chimeras_d = {}
+shorts_d = {}
 bad_hits = {}
 allowed = []
 confusing_sequences = []
 
+# python eukref_gbretrieve.py
+# -i current_DB.fasta
+# -dbnt /scratch/NCBI_NT/nt
+# -dbsi ../../Reference_DB.fas
+# -n 100
+# -p 8
+# -g NAME
+# -m megablast
+# -idsi 75
+# -idnt 90
+# -td tax_d.bin
 
 # ###################### Analyze initial DB #########################
 # Format New Sequences
 infile = open(db)
 line = infile.read()
 infile.close()
+
 acc_count = 0
+
 out = open('%s_reformated' % (db), 'w')
 seqs = line[1:].split('\n>')
 for seq in seqs:
@@ -331,17 +330,17 @@ for seq in seqs:
         ac = seq.split('|')[3]
         out.write('>%s\n' % (seq))
     except IndexError:
-    	# if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
-	accession = seq.split()[0]
-	print '>gi|nogi|gb|%s\n' % (accession)
-	sequence = ''.join(seq.split('\n')[1:])
-	out.write('>gi|noginumber|gb|%s|\n%s\n' % (accession, sequence))
+        # if not in old genbank format assume in form of >accession.1 other info, with a space delimiter
+        accession = seq.split()[0]
+        print '>gi|nogi|gb|%s\n' % (accession)
+        sequence = ''.join(seq.split('\n')[1:])
+        out.write('>gi|noginumber|gb|%s|\n%s\n' % (accession, sequence))
     acc_count = acc_count + 1
 out.close()
 
 os.system('cp %s %s_old_version' % (db, db))
 #os.system('cp %s_reformated %s' % (db, db))
-os.system('cp %s_reformated current_DB.fas' % (db))
+os.system('cp % s_reformated current_DB.fas' % (db))
 
 print 'Runing uchime on initial fasta file'
 run_uchime('current_DB.fas', 'temp_initial_db.fas')
@@ -358,35 +357,39 @@ while True:
     c = c + 1
     print 'starting cycle %s' % (int(c))
     # run usearch
-    print 'running usearch'
-    os.system('usearch -sortbylength new_round.fas -fastaout DB.sorted.fas -minseqlength 64')
-    os.system('usearch -cluster_smallmem DB.sorted.fas -id 0.97 -centroids temp_DB_clust.fas -uc temp_DB_clust.uc')
+
+    print 'running vsearch'
+    os.system('vsearch --sortbylength new_round.fas --output DB.sorted.fas')
+    os.system('vsearch --cluster_smallmem DB.sorted.fas --id 0.97 --centroids temp_DB_clust.fas --uc temp_DB_clust.uc')
 
     # remove seqs shorter 500
     # trim_short_seqs('temp_DB_clust.fas', 'temp_DB_clust_500.fas', 500)
     # print 'removing short sequences'
-    # remove species that are already in the database
+
+
+    # BLAST clustered vs NCBI NT
     print 'running blast'
     hits_acs = nt_blast(
         'temp_DB_clust.fas',
         num_seq_per_round,
         'temp_DB_clust_500.blastntab')
+
+    # remove species that are already in the database
     # remove_repeats when compared to current_DB.fas
     dict_existing = make_ac_dict('current_DB.fas')
     hits_acs2 = list(hits_acs)
-    for i in hits_acs2:
+    for hit in hits_acs2:
         try:
-            yup = dict_existing[i]
-            hits_acs.remove(i)
+            yup = dict_existing[hit]
+            hits_acs.remove(hit)
         except KeyError:
             pass
-    #print len(hits_acs)
 
     # remove repeated BAD hits
-    for i in hits_acs2:
+    for hit in hits_acs2:
         try:
-            yup = bad_hits[i]
-            hits_acs.remove(i)
+            yup = bad_hits[hit]
+            hits_acs.remove(hit)
         except KeyError:
             pass
     #print len(hits_acs)
@@ -399,8 +402,8 @@ while True:
     else:
         # write accessions into text file
         out = open('temp_to_get_acs.txt', 'w')
-        for i in hits_acs:
-            out.write('%s\n' % (i))
+        for hit in hits_acs:
+            out.write('%s\n' % (hit))
         out.close()
         # recover fasta file for accessions
         os.system(
@@ -418,13 +421,13 @@ while True:
         # Write the accession numbers into text file
         if silva_parsed_acs != []:
             out = open('temp_to_get_acs.txt', 'w')
-            for i in silva_parsed_acs:
-                out.write('%s\n' % (i))
+            for hit in silva_parsed_acs:
+                out.write('%s\n' % (hit))
             out.close()
+
             # pull passed sequences from the NCBI db
-            os.system(
-                'blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results_silva_untrimmed.fas' %
-                (path_to_nt))
+            os.system('blastdbcmd -entry_batch temp_to_get_acs.txt -db %s -out temp_results_silva_untrimmed.fas' % (path_to_nt))
+
             # run uchime
             # Trim sequences based on best hit
             infile = open('temp_results_silva_untrimmed.fas')
@@ -432,28 +435,28 @@ while True:
             infile.close()
             out = open('temp_results_silva.fas', 'w')
             seqs = line[1:].split('\n>')
-            for i in seqs:
-                new_seq = ''.join(i.split('\n')[1:])
-                hit_len = int(silva_coord_dict[i.split('|')[3]][
-                              0]) - int(silva_coord_dict[i.split('|')[3]][1])
+            for hit in seqs:
+                new_seq = ''.join(hit.split('\n')[1:])
+                hit_len = int(silva_coord_dict[get_acc(hit.split('\n')[0])][
+                              0]) - int(silva_coord_dict[get_acc(hit.split('\n')[0])][1])
                 #print hit_len
                 if hit_len > 0:
 
                     if float(hit_len) / float(len(new_seq)) < 0.8:
-                        new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][0]):int(
-                            silva_coord_dict[i.split('|')[3]][1])]
+                        new_seq = new_seq[int(silva_coord_dict[get_acc(hit.split('\n')[0])][0]):int(
+                            silva_coord_dict[get_acc(hit.split('\n')[0])][1])]
                     else:
                         new_seq = new_seq
                 elif hit_len < 0:
                     #print -float(hit_len) / float(len(new_seq))
                     if -float(hit_len) / float(len(new_seq)) < 0.8:
                         #print new_seq
-                        new_seq = new_seq[int(silva_coord_dict[i.split('|')[3]][0]):int(
-                            silva_coord_dict[i.split('|')[3]][1])]
+                        new_seq = new_seq[int(silva_coord_dict[get_acc(hit.split('\n')[0])][0]):int(
+                            silva_coord_dict[get_acc(hit.split('\n')[0])][1])]
                         #print new_seq
                     else:
                         new_seq = new_seq
-                out.write('>%s\n%s\n' % (i.split('\n')[0], new_seq))
+                out.write('>%s\n%s\n' % (hit.split('\n')[0], new_seq))
             out.close()
 
             prdel = open('temp_results_silva.fas')
@@ -469,12 +472,14 @@ while True:
             # merge new sequences with old database
             os.system(
                 'cat current_DB.fas temp_results_silva_uchime_500.fas > new_DB.fas')
+
             os.system('mv new_DB.fas current_DB.fas')
             # restart cycle with new sequences
             os.system('mv temp_results_silva_uchime_500.fas new_round.fas')
             # remove temporary files - move to ne folder
             os.system('mkdir cycle_%s' % (c))
             os.system('mv temp* cycle_%s' % (c))
+
             os.system('cp current_DB.fas cycle_%s' % (c))
             # check there are new sequences left
             infile = open('new_round.fas')
@@ -484,6 +489,17 @@ while True:
                 break
         else:
             break
+
+
+out_chimeras = open('Chimeras_final.fas','w')
+for hit in chimeras_d:
+	out_chimeras.write('>%s\n%s\n' % (hit, chimeras_d[hit]))
+out_chimeras.close	
+
+out_shorts = open('Shorts_final.fas','w')
+for hit in shorts_d:
+	out_shorts.write('>%s\n%s\n' % (hit, shorts_d[hit]))
+out_shorts.close	
 
 # run function to rename sequences in output fasta file
 #rename_sequences('current_DB.fas', 'current_DB_tree_names.fas')
