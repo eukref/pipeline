@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 """
 Writen by Martin Kolisko.
 29.8.2016
