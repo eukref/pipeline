@@ -6,6 +6,8 @@ Writen by Serafim Nenarokov.
 
 run: ./eukref_recover_headers.py
 """
+import subprocess
+
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
@@ -45,6 +47,17 @@ def main():
             for acc, rec in records.iteritems():
                 cur_db_final_f.write(rec.format('fasta'))
                 acc_f.write(extract_acc(acc) + "\n")
+
+    # check the number of lines
+    cur_db_cnt = int(subprocess.check_output("grep -c '>' %s" % cur_db_path, shell=True).strip())
+    cur_db_final_cnt = int(subprocess.check_output("grep -c '>' %s" % cur_db_final_path, shell=True).strip())
+    acc_cnt = int(subprocess.check_output("cat %s | wc -l" % acc_path, shell=True).strip())
+
+    if cur_db_cnt == cur_db_final_cnt == acc_cnt:
+        print("Everything is fixed correctly (%s seqs)" % acc_cnt)
+    else:
+        err_msg = "ERROR: (current_DB: %s records, current_DB_final: %s records, accessions: %s lines)"
+        print(err_msg % (cur_db_cnt, cur_db_final_cnt, acc_cnt))
 
 
 if __name__ == '__main__':
