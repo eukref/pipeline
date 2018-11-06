@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 print "\nScript for parsing GenBank metadata and renaming fasta file for annotation."
 #print "Contributors: Javier del Campo and Laura Wegener Parfrey"
@@ -208,11 +208,13 @@ def rename_sequences_ref(in_gb, infile, ref_acc, outfile):
 	#result_handle = open(in_gb, "U")
 	# parse gb file; block to go through gb file for acc not in ref
 	gbfiles = SeqIO.parse(in_gb, 'gb')
+
 	# make dict of acc, last level, organism
 	for rec in gbfiles:
 		acc = rec.id
 		clean_acc = re.sub(r'\.[1-9]', '', acc)
 		#print clean_acc
+
 		if clean_acc in ref_acc:
 			next
 		else:
@@ -230,6 +232,7 @@ def rename_sequences_ref(in_gb, infile, ref_acc, outfile):
 				taxonomy = rec.annotations['taxonomy']
 				# add accession plus last taxonomy level and organism name to tax dict
 				name = taxonomy[-1]+"_"+ organism
+				gb_tax[clean_acc] = name
 			#if the taxonomy is just absent entirely
 			elif 'taxonomy' not in rec.annotations:
 				name = organism
@@ -283,10 +286,9 @@ ref_accessions = {}
 if args.ref_tax is not None:
 	for line in open(ref_tax, "U"):
 		# split by \t
-		acc = line.strip().split('\t')
+		acc = line.strip().split(' ')
 		ref_accessions[acc[0]] = acc[1]
 		#print ref_accessions[acc[0]]
-
 
 # run  eukref_gbmetadata.py version that also reports reference taxonomy if given gb file AND given reference taxonomy file (e.g. Silva taxonomy file)
 if args.input_gb_file_fp is not None and args.ref_tax is not None:
