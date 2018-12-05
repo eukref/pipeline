@@ -19,6 +19,8 @@ import os
 import pickle
 import argparse
 import re
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 print "Genbank SSU rRNA gene parser."
 print "Contributors: Martin Kolisko, Javier del Campo, Laura Wegener Parfrey and Frederick Mahe"
