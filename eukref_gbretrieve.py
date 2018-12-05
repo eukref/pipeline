@@ -8,7 +8,7 @@ run: python eukref_gbretrieve.py -h for usage.
 
 This pipeline requires USEARCH (32bit version is OK) and NCBI Blast to be installed. If you are using linux and cannot
 install programs as administrator, you can install both under your account and add them to your PATH or put executables
-into the folder you are using this script from. 
+into the folder you are using this script from.
 
 You will also need localy placed NCBI NT database, which can be downloaded from NCBI ftp server.
 """
@@ -20,7 +20,7 @@ import pickle
 import argparse
 import re
 
-print "Genbank SSU rRNA gene parser." 
+print "Genbank SSU rRNA gene parser."
 print "Contributors: Martin Kolisko, Javier del Campo, Laura Wegener Parfrey and Frederick Mahe"
 print "29 August 2016"
 print "\n\nrun: python eukref_gbretrieve.py -h for help.\n\nThis pipeline requires USEARCH (32bit version is OK) and NCBI Blast to be installed. If you are using linux and cannot\ninstall programs as administrator, you can install both under your account and add them to your PATH.  \n\nYou will also need localy placed NCBI NT database, which can be downloaded from NCBI ftp server."
@@ -106,6 +106,45 @@ Renaming_d = {}
 os.system("usearch -makeudb_usearch Reference_DB.fas -output Reference_DB.udb")
 os.system("usearch -makeudb_usearch gb203_pr2_all_10_28_97p_noorg.fasta -output gb203_pr2_all_10_28_97p_noorg.udb")
 
+## Moved from eukref_fix_current_db.py
+
+def extract_acc(header):
+    acc = header.split()[0]
+    return acc.split('.')[0]
+
+def eukref_fix_current_db():
+    cur_db_path = 'current_DB.fas'
+    cur_db_final_path = 'current_DB_final.fas'
+    acc_path = 'accessions_current_DB.txt'
+
+    with open(cur_db_path) as cur_db_f, open(cur_db_final_path, 'w') as cur_db_final_f:
+        with open(acc_path, 'w') as acc_f:
+
+            records = {}
+
+            for rec in SeqIO.parse(cur_db_f, 'fasta'):
+
+                if '>' in rec.description:
+                    headers = rec.description.split(' >')
+                else:
+                    headers = [rec.description]
+
+                for header in headers:
+                    acc = extract_acc(header)
+
+                    new_rec = SeqRecord(rec.seq, id=acc,
+                                        name=acc,
+                                        description=header)
+
+                    if acc not in records:
+                        records[acc] = new_rec
+
+            for acc, rec in records.iteritems():
+                cur_db_final_f.write(rec.format('fasta'))
+                acc_f.write(extract_acc(acc) + "\n")
+
+## Original gbretrieve code
+
 def get_acc(ncbi_header):
     if ncbi_header.count('|') == 0:
         acc_number = ncbi_header.split()[0]
@@ -129,7 +168,7 @@ def nt_blast(query_file, num_seqs, outf):
     lines = infile.readlines()
     infile.close()
     acc = []
-    # this is the part that renames the seq.  
+    # this is the part that renames the seq.
     for line in lines:
         if float(line.split()[2]) >= float(percent_id_nt):
             hit_column = line.split('\t')[1]
@@ -155,7 +194,7 @@ def silva_blast(query_file, outf):
         p_id = line.split()[2]
         ac_hit = line.split()[1]
         ac_hit = ac_hit.split('.')[0]
-        jaba = 0 
+        jaba = 0
         #if ac_hit not in done:  #why am I doing this?
         done.append(get_acc(line.split()[0]))
         jaba = jaba + 1
@@ -221,7 +260,7 @@ def make_ac_dict(fname):
     return d
 
 
-# run uchime to search for chimeric seqs. 
+# run uchime to search for chimeric seqs.
 def run_uchime(fnamein, fnameout):
     whynot = open(fnamein, 'r')
     line = whynot.read()
@@ -271,7 +310,7 @@ def run_uchime(fnamein, fnameout):
     out.close()
 
 
-# function for outputting a list of all accessions to be used further. 
+# function for outputting a list of all accessions to be used further.
 def out_accessions(infile, out_fasta_file, out_accessions_file):
 	out_acc = open(out_accessions_file, 'w')
 	out_fasta = open(out_fasta_file, 'w')
@@ -291,7 +330,7 @@ def out_accessions(infile, out_fasta_file, out_accessions_file):
 		out_fasta.write(">%s\n%s\n" % (i, seq_d[i]))
 		out_acc.write("%s\n" % (i))
 
-				
+
 
 # ###################################################################
 # ######################### SCRIPT ITSELF ###########################
@@ -358,21 +397,11 @@ db_dict = load_fasta_file(db)
 while True:
     c = c + 1
     print 'starting cycle %s' % (int(c))
-    # run usearch
-
-    print 'running vsearch'
-    os.system('vsearch --sortbylength new_round.fas --output DB.sorted.fas')
-    os.system('vsearch --cluster_smallmem DB.sorted.fas --id 0.97 --centroids temp_DB_clust.fas --uc temp_DB_clust.uc')
-
-    # remove seqs shorter 500
-    # trim_short_seqs('temp_DB_clust.fas', 'temp_DB_clust_500.fas', 500)
-    # print 'removing short sequences'
-
 
     # BLAST clustered vs NCBI NT
     print 'running blast'
     hits_acs = nt_blast(
-        'temp_DB_clust.fas',
+        'new_round.fas',
         num_seq_per_round,
         'temp_DB_clust_500.blastntab')
 
@@ -496,18 +525,20 @@ while True:
 out_chimeras = open('Chimeras_final.fas','w')
 for hit in chimeras_d:
 	out_chimeras.write('>%s\n%s\n' % (hit, chimeras_d[hit]))
-out_chimeras.close	
+out_chimeras.close
 
 out_shorts = open('Shorts_final.fas','w')
 for hit in shorts_d:
 	out_shorts.write('>%s\n%s\n' % (hit, shorts_d[hit]))
-out_shorts.close	
+out_shorts.close
 
 # run function to rename sequences in output fasta file
 #rename_sequences('current_DB.fas', 'current_DB_tree_names.fas')
 
 # run function to output a list of accessions in the final DB
 out_accessions('current_DB.fas', 'current_DB_final.fas', 'accessions_current_DB.txt')
+
+eukref_fix_current_db();
 
 # ####### TO ADD #########
 # re-recover short seqs
